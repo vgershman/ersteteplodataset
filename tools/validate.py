@@ -15,6 +15,28 @@ PROPS = SCHEMA["properties"]
 VALUE_RE = re.compile(r"^[0-9.\-]*$")
 
 
+ENERGY_UNITS = {"gcal", "kwh", "mwh", "gj"}
+
+
+def consistency(label: dict) -> list[str]:
+    """Те же правила, что labelConsistencyErrors в основном проекте."""
+    errors, o = [], label.get("outcome")
+    if o == "read":
+        if label.get("screenType") != "energy":
+            errors.append("outcome=read — только для screenType=energy")
+        if not label.get("readable"):
+            errors.append("outcome=read, но readable=false")
+        if not label.get("valueText"):
+            errors.append("outcome=read — нужен valueText")
+        if label.get("unit") not in ENERGY_UNITS:
+            errors.append(f"outcome=read — единица энергии {sorted(ENERGY_UNITS)}")
+    if o == "wrong_screen" and label.get("screenType") == "energy":
+        errors.append("outcome=wrong_screen, но screenType=energy")
+    if o == "unreadable" and label.get("readable"):
+        errors.append("outcome=unreadable, но readable=true")
+    return errors
+
+
 def check_label(label: dict) -> list[str]:
     errors = []
     missing = set(SCHEMA["required"]) - set(label)
@@ -23,7 +45,7 @@ def check_label(label: dict) -> list[str]:
         errors.append(f"нет полей: {sorted(missing)}")
     if extra:
         errors.append(f"лишние поля: {sorted(extra)}")
-    for key in ("meterModel", "screenType", "unit"):
+    for key in ("outcome", "meterModel", "screenType", "unit"):
         if key in label and label[key] not in PROPS[key]["enum"]:
             errors.append(f"{key}={label[key]!r} не из списка {PROPS[key]['enum']}")
     if not isinstance(label.get("readable"), bool):
@@ -33,8 +55,6 @@ def check_label(label: dict) -> list[str]:
             errors.append(f"{key} должно быть строкой")
     if isinstance(label.get("valueText"), str) and not VALUE_RE.match(label["valueText"]):
         errors.append(f"valueText={label['valueText']!r}: только цифры, '.', '-'")
-    if label.get("readable") and label.get("valueText") == "" and label.get("screenType") not in ("blank", "other"):
-        errors.append("readable=true, но valueText пустой")
     issues = label.get("qualityIssues")
     allowed = PROPS["qualityIssues"]["items"]["enum"]
     if not isinstance(issues, list) or any(i not in allowed for i in issues):
@@ -44,12 +64,14 @@ def check_label(label: dict) -> list[str]:
         ok = isinstance(bbox, list) and len(bbox) == 4 and all(isinstance(v, (int, float)) and 0 <= v <= 1 for v in bbox)
         if not ok or bbox[2] <= bbox[0] or bbox[3] <= bbox[1]:
             errors.append(f"displayBbox={bbox}: [x0, y0, x1, y1] в 0..1, x1>x0, y1>y0")
-    return errors
+    return errors + consistency(label)
 
 
 def main() -> int:
     total_errors = labeled = expected = 0
     for batch in sorted((ROOT / "batches").glob("*/")):
+        if (batch / "IMPORTED.md").exists():
+            continue  # партия уже импортирована в панель — её правят там
         manifest = [json.loads(l) for l in (batch / "manifest.jsonl").read_text().splitlines() if l.strip()]
         ids = {m["id"] for m in manifest}
         expected += len(ids)
