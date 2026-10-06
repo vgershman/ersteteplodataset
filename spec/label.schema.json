@@ -1,0 +1,111 @@
+{
+  "type": "object",
+  "properties": {
+    "meterModel": {
+      "type": "string",
+      "enum": [
+        "pulsar_old",
+        "pulsar_new",
+        "proexpert",
+        "puls_stk15",
+        "zenner",
+        "teploucet1",
+        "other"
+      ]
+    },
+    "screenType": {
+      "type": "string",
+      "enum": [
+        "energy",
+        "volume",
+        "temperature",
+        "delta_t",
+        "flow",
+        "power",
+        "datetime",
+        "operating_time",
+        "serial",
+        "segment_test",
+        "error",
+        "blank",
+        "other"
+      ]
+    },
+    "valueText": {
+      "type": "string",
+      "description": "Символы главной строки экрана ровно как показаны: цифры, '.', '-'. Пусто, если не читается."
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "gcal",
+        "kwh",
+        "mwh",
+        "gj",
+        "m3",
+        "celsius",
+        "m3h",
+        "kw",
+        "none",
+        "unknown"
+      ]
+    },
+    "readable": {
+      "type": "boolean"
+    },
+    "uncertainDigits": {
+      "type": "string",
+      "description": "Сомнительные позиции, например '3-я цифра: 8 или 0'. Пусто, если сомнений нет."
+    },
+    "displayBbox": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Рамка ЖК-экрана основного прибора [x0, y0, x1, y1] в долях ширины/высоты (0..1); null, если экрана не видно."
+    },
+    "apartmentSticker": {
+      "type": "string",
+      "description": "Номер квартиры с наклейки на основном приборе. Пусто, если наклейки нет."
+    },
+    "qualityIssues": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "glare",
+          "blur",
+          "dark",
+          "angle",
+          "partial",
+          "occluded",
+          "ghost_segments",
+          "multiple_meters"
+        ]
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "meterModel",
+    "screenType",
+    "valueText",
+    "unit",
+    "readable",
+    "uncertainDigits",
+    "displayBbox",
+    "apartmentSticker",
+    "qualityIssues",
+    "notes"
+  ],
+  "additionalProperties": false
+}
