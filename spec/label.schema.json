@@ -30,6 +30,8 @@
       "enum": [
         "energy",
         "volume",
+        "temp_supply",
+        "temp_return",
         "temperature",
         "delta_t",
         "flow",
